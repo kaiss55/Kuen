@@ -170,8 +170,7 @@
             const data = await res.json();
             
             // 篩選往顯徑方向 (大圍方向) 且有有效到站時間的數據
-            //const validBuses = data.data.filter(item => item.dir === "O" && item.eta);
-            const validBuses = data.data.filter(item.eta);
+            const validBuses = data.data.filter(item => item.dir === "I" && item.eta);
             const listContainer = document.getElementById('bus-eta-list');
             listContainer.innerHTML = ""; 
 
