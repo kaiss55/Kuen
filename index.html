@@ -87,30 +87,30 @@
 
     <div class="weather-current">
         <span id="temp">--</span>°C | <span id="humidity">--</span>%
-        <span class="location-tag">荔枝角 (深水埗站數據)</span>
+        <span class="location-tag" id="weather-loc">葵青區 (荔景數據)</span>
     </div>
 
     <div class="forecast-container">
         <div class="forecast-day">
             <span id="f-date-1">--/--</span>
-            <img id="f-icon-1" src="" style="display:none;">
+            <img id="f-icon-1" src="" style="display:none;" referrerpolicy="no-referrer">
             <span id="f-temp-1" class="forecast-temp">--°C</span>
         </div>
         <div class="forecast-day" style="border-left: 1px solid #222; border-right: 1px solid #222;">
             <span id="f-date-2">--/--</span>
-            <img id="f-icon-2" src="" style="display:none;">
+            <img id="f-icon-2" src="" style="display:none;" referrerpolicy="no-referrer">
             <span id="f-temp-2" class="forecast-temp">--°C</span>
         </div>
         <div class="forecast-day">
             <span id="f-date-3">--/--</span>
-            <img id="f-icon-3" src="" style="display:none;">
+            <img id="f-icon-3" src="" style="display:none;" referrerpolicy="no-referrer">
             <span id="f-temp-3" class="forecast-temp">--°C</span>
         </div>
     </div>
 
     <div class="bus-card">
-        <div class="bus-route">城巴 E21B</div>
-        <div class="bus-location">荔枝角站 (往何文田)</div>
+        <div class="bus-route">九巴 46X</div>
+        <div class="bus-location">荔景北總站 (往顯徑/大圍)</div>
         
         <div class="bus-eta-container" id="bus-eta-list">
             <div style="font-size: 1.5rem; color: #888;">載入中...</div>
@@ -130,8 +130,10 @@
         try {
             const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
             const data = await res.json();
-            const sspTemp = data.temperature.data.find(item => item.place === '深水埗');
-            document.getElementById('temp').innerText = sspTemp ? sspTemp.value : data.temperature.data[0].value;
+            
+            // 【修改】將篩選地點改為「葵涌」，這通常最符合荔景附近的體感溫度
+            const kcTemp = data.temperature.data.find(item => item.place === '葵涌');
+            document.getElementById('temp').innerText = kcTemp ? kcTemp.value : data.temperature.data[0].value;
             document.getElementById('humidity').innerText = data.humidity.data[0].value;
         } catch (e) { console.error("即時天氣更新失敗", e); }
     }
@@ -148,7 +150,6 @@
                 const day = dateStr.substring(6,8);
                 document.getElementById(`f-date-${i}`).innerText = `${month}/${day}`;
                 
-                // 【已修正】天文台最新官方靜態圖片網址格式
                 const iconId = dayData.ForecastIcon;
                 const iconUrl = `https://www.hko.gov.hk/images/HKOWxIconOutline/pic${iconId}.png`;
                 const imgTag = document.getElementById(`f-icon-${i}`);
@@ -161,18 +162,21 @@
         } catch (e) { console.error("天氣預報更新失敗", e); }
     }
 
-    // 攞城巴 E21B 未來 3 班車時間
-    // 攞城巴 E21B 未來 3 班車時間 (加埋到站時刻)
-    async function fetchCitybusETA() {
+    // 【修改】更換為九巴 API 並鎖定 46X 荔景北總站
+    async function fetchKmbETA() {
         try {
-            const res = await fetch('https://rt.data.gov.hk/v1/transport/citybus-nwfb/eta/CTB/001436/E21B');
+            // 九巴 46X 往顯徑方向 (Outbound)，荔景北總站的 Stop ID 為 LA03-T-1000-0
+            const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/eta/1423FCFF61709EAC/46X/1');
             const data = await res.json();
             
-            const validBuses = data.data.filter(item => item.dir === "I" && item.eta);
+            // 篩選往顯徑方向 (大圍方向) 且有有效到站時間的數據
+            const validBuses = data.data.filter(item => item.dir === "O" && item.eta);
             const listContainer = document.getElementById('bus-eta-list');
             listContainer.innerHTML = ""; 
 
             if (validBuses.length > 0) {
+                // 依到站時間先後排序
+                validBuses.sort((a, b) => new Date(a.eta) - new Date(b.eta));
                 const maxBuses = Math.min(3, validBuses.length);
                 let htmlContent = "";
 
@@ -181,7 +185,6 @@
                     const now = new Date();
                     const diffMins = Math.max(0, Math.round((etaTime - now) / 1000 / 60));
                     
-                    // 【新增】格式化到站時間 (例如 15:42)
                     const hours = String(etaTime.getHours()).padStart(2, '0');
                     const minutes = String(etaTime.getMinutes()).padStart(2, '0');
                     const timeString = `${hours}:${minutes}`;
@@ -212,6 +215,7 @@
                 listContainer.innerHTML = `<div style="font-size: 1.8rem; padding: 20px;">暫無班次</div>`;
             }
         } catch (e) { 
+            console.error(e);
             document.getElementById('bus-eta-list').innerHTML = `<div style="color: red;">更新失敗</div>`;
         }
     }
@@ -219,12 +223,12 @@
     // 初始執行
     fetchCurrentWeather();
     fetchForecast();
-    fetchCitybusETA();
+    fetchKmbETA();
 
     // 30秒更新
     setInterval(() => {
         fetchCurrentWeather();
-        fetchCitybusETA();
+        fetchKmbETA();
     }, 30000);
 
     // 3小時更新預報
