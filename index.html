@@ -187,7 +187,7 @@
                 const month = dateStr.substring(4,6);
                 const day = dateStr.substring(6,8);
                 document.getElementById(`f-date-${i}`).innerText = `${month}/${day}`;
-                
+		                
                 const iconId = dayData.ForecastIcon;
                 const iconUrl = `https://www.hko.gov.hk/images/HKOWxIconOutline/pic${iconId}.png`;
                 const imgTag = document.getElementById(`f-icon-${i}`);
@@ -241,6 +241,7 @@
     }
 
     // 獲取所有路線的 ETA
+    // 獲取所有路線的 ETA
     async function fetchAllBusETA() {
         for (let i = 0; i < busRoutes.length; i++) {
             const bus = busRoutes[i];
@@ -266,11 +267,18 @@
 
                     const maxBuses = Math.min(3, uniqueBuses.length);
                     let htmlContent = "";
+					
+                    // ====== 💡 修正位置 1：直接將字串丟進 new Date() ======
+                    const currentTimestamp = new Date(data.generated_timestamp);
 
                     for (let j = 0; j < maxBuses; j++) {
+                        // ====== 💡 修正位置 2：直接將字串丟進 new Date() ======
                         const etaTime = new Date(uniqueBuses[j].eta);
-                        const now = new Date();
-                        const diffMins = Math.max(0, Math.round((etaTime - now) / 1000 / 60)) -1;
+                        
+                        // ====== 💡 修正位置 3：計完 MINS 之後加入 Math.max(0, ...) 避免出負數 ======
+                        let diffMins = Math.floor((etaTime - currentTimestamp) / 1000 / 60);
+                        diffMins = Math.max(0, diffMins); 
+
                         
                         const hours = String(etaTime.getHours()).padStart(2, '0');
                         const minutes = String(etaTime.getMinutes()).padStart(2, '0');
