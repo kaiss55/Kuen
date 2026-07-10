@@ -166,7 +166,7 @@
     async function fetchKmbETA() {
         try {
             // 九巴 46X 往顯徑方向 (Outbound)，荔景北總站的 Stop ID 為 LA03-T-1000-0
-            const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/eta/1423FCFF61709EAC/46X/1');
+            const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/eta/6E6EBC9D1AF2DA52/46X/1');
             const data = await res.json();
             
             // 篩選往顯徑方向 (大圍方向) 且有有效到站時間的數據
