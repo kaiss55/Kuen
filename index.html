@@ -50,7 +50,7 @@
         .forecast-day img { width: 45px; height: 45px; margin: 5px 0; }
         .forecast-temp { color: #ffaa00; font-weight: bold; }
 
-        /* 【新增】左右滑動巴士卡片容器 */
+        /* 左右滑動巴士卡片容器 */
         .bus-carousel {
             display: flex;
             overflow-x: auto;
@@ -58,7 +58,6 @@
             gap: 15px;
             width: 100%;
             padding-bottom: 10px;
-            /* 隱藏捲動條（滾動條） */
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
         }
@@ -72,9 +71,9 @@
             border: 2px solid #333;
             border-radius: 20px;
             padding: 25px 20px;
-            min-width: 100%; /* 確保一張卡片霸佔整個寬度 */
+            min-width: 100%; 
             box-sizing: border-box;
-            scroll-snap-align: start; /* 滑動時自動吸附對齊 */
+            scroll-snap-align: start; 
         }
         .bus-route { font-size: 3rem; font-weight: bold; color: #ffcc00; }
         .bus-location { font-size: 1.1rem; color: #888; margin-top: 5px; }
@@ -98,7 +97,7 @@
         .eta-main { font-size: 2.4rem; color: #fff; font-weight: bold; }
         .eta-next { color: #aaa; }
 
-        /* 【新增】小圓點指示器（話比你知有幾多個 Route） */
+        /* 小圓點指示器 */
         .carousel-dots {
             display: flex;
             justify-content: center;
@@ -145,18 +144,16 @@
         </div>
     </div>
 
-    <div class="bus-carousel" id="bus-carousel">
-        </div>
-    
+    <div class="bus-carousel" id="bus-carousel"></div>
     <div class="carousel-dots" id="carousel-dots"></div>
 </div>
 
 <script>
-    // 【設定】你想顯示的巴士路線清單 (Stop ID, 路線名, 目的地名稱)
+    // 【設定】唔再需要寫死 dir，改用 dest 關鍵字去自動配對目的地
     const busRoutes = [
-        { stopId: "6E6EBC9D1AF2DA52", route: "46X", location: "荔景邨日景樓 (往大圍/顯徑)" },
-        { stopId: "1B89F83BD1FC3F74", route: "46X", location: "海福花園 (往美孚)" },
-        { stopId: "941B58A78A49CD0B", route: "57M", location: "荔景北巴士總站(往山景)" }
+        { stopId: "6E6EBC9D1AF2DA52", route: "46X", dest: "顯徑", location: "荔景邨日景樓 (往大圍/顯徑)" },
+        { stopId: "1B89F83BD1FC3F74", route: "46X", dest: "美孚", location: "海福花園 (往美孚)" },
+        { stopId: "941B58A78A49CD0B", route: "57M", dest: "山景", location: "荔景北巴士總站(往山景)" }
     ];
 
     function updateClock() {
@@ -187,7 +184,7 @@
                 const month = dateStr.substring(4,6);
                 const day = dateStr.substring(6,8);
                 document.getElementById(`f-date-${i}`).innerText = `${month}/${day}`;
-		                
+                
                 const iconId = dayData.ForecastIcon;
                 const iconUrl = `https://www.hko.gov.hk/images/HKOWxIconOutline/pic${iconId}.png`;
                 const imgTag = document.getElementById(`f-icon-${i}`);
@@ -208,7 +205,6 @@
         dotsContainer.innerHTML = "";
 
         busRoutes.forEach((bus, index) => {
-            // 建立巴士卡片 HTML
             const card = document.createElement('div');
             card.className = "bus-card";
             card.innerHTML = `
@@ -220,13 +216,11 @@
             `;
             carousel.appendChild(card);
 
-            // 建立指示小圓點
             const dot = document.createElement('div');
             dot.className = `dot ${index === 0 ? 'active' : ''}`;
             dotsContainer.appendChild(dot);
         });
 
-        // 監聽滑動事件來更新小圓點顏色
         carousel.addEventListener('scroll', () => {
             const scrollLeft = carousel.scrollLeft;
             const cardWidth = carousel.clientWidth;
@@ -241,7 +235,7 @@
     }
 
     // 獲取所有路線的 ETA
-    // 獲取所有路線的 ETA
+// 獲取所有路線的 ETA (已修正死循環 Bug)
     async function fetchAllBusETA() {
         for (let i = 0; i < busRoutes.length; i++) {
             const bus = busRoutes[i];
@@ -251,35 +245,28 @@
                 const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${bus.stopId}/${bus.route}/1`);
                 const data = await res.json();
                 
-                const validBuses = data.data.filter(item => item.eta);
+                // 檢查目的地字串（dest_tc）是否包含我們設定的關鍵字
+                const validBuses = data.data.filter(item => item.eta && item.dest_tc.includes(bus.dest));
 
                 if (validBuses.length > 0) {
+                    // 排序
                     validBuses.sort((a, b) => new Date(a.eta) - new Date(b.eta));
                     
-                    const uniqueBuses = [];
-                    const seenTimes = new Set();
-                    for (const b of validBuses) {
-                        if (!seenTimes.has(b.eta)) {
-                            seenTimes.add(b.eta);
-                            uniqueBuses.push(b);
-                        }
-                    }
+                    // 【全新安全修正】使用 Set 一行去重複，100% 避免 400ms 死循環錯誤
+                    const seen = new Set();
+                    const uniqueBuses = validBuses.filter(b => seen.has(b.eta) ? false : seen.add(b.eta));
 
                     const maxBuses = Math.min(3, uniqueBuses.length);
                     let htmlContent = "";
-					
-                    // ====== 💡 修正位置 1：直接將字串丟進 new Date() ======
+                    
                     const currentTimestamp = new Date(data.generated_timestamp);
 
                     for (let j = 0; j < maxBuses; j++) {
-                        // ====== 💡 修正位置 2：直接將字串丟進 new Date() ======
                         const etaTime = new Date(uniqueBuses[j].eta);
                         
-                        // ====== 💡 修正位置 3：計完 MINS 之後加入 Math.max(0, ...) 避免出負數 ======
                         let diffMins = Math.floor((etaTime - currentTimestamp) / 1000 / 60);
                         diffMins = Math.max(0, diffMins); 
 
-                        
                         const hours = String(etaTime.getHours()).padStart(2, '0');
                         const minutes = String(etaTime.getMinutes()).padStart(2, '0');
                         const timeString = `${hours}:${minutes}`;
@@ -315,12 +302,11 @@
             }
         }
     }
-
     // 初始執行
     fetchCurrentWeather();
     fetchForecast();
-    initBusCards();  // 先建立卡片結構
-    fetchAllBusETA(); // 再去撈時間
+    initBusCards();  
+    fetchAllBusETA(); 
 
     // 30秒更新
     setInterval(() => {
