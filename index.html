@@ -183,7 +183,7 @@
                 for (let i = 0; i < maxBuses; i++) {
                     const etaTime = new Date(validBuses[i].eta);
                     const now = new Date();
-                    const diffMins = Math.max(0, Math.round((etaTime - now) / 1000 / 60));
+                    const diffMins = Math.max(0, Math.round((etaTime - now) / 1000 / 60)) -1;
                     
                     const hours = String(etaTime.getHours()).padStart(2, '0');
                     const minutes = String(etaTime.getMinutes()).padStart(2, '0');
