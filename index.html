@@ -1,324 +1,265 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bus & Weather Dashboard</title>
+    <title>長者專用九巴簡易看板</title>
     <style>
         body {
-            background-color: #000;
-            color: #fff;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            box-sizing: border-box;
+            background-color: #f7f9fa;
+            color: #333;
         }
-        .container {
-            width: 100%;
-            max-width: 480px;
+        h1 {
             text-align: center;
-        }
-        .time-box { font-size: 3.5rem; color: #00ffcc; font-weight: bold; margin-bottom: 5px; }
-        
-        /* 天氣區域 */
-        .weather-current { font-size: 1.8rem; margin-bottom: 15px; color: #fff; }
-        .location-tag { font-size: 1rem; color: #888; display: block; margin-top: 2px; }
-        
-        /* 3日預報 UI */
-        .forecast-container {
-            display: flex;
-            justify-content: space-between;
-            background: #111;
-            border: 1px solid #222;
-            border-radius: 15px;
-            padding: 15px;
+            font-size: 28px;
+            color: #d9383a;
             margin-bottom: 20px;
         }
-        .forecast-day {
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        input {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 0.9rem;
-            color: #ccc;
+            font-size: 26px;
+            padding: 12px;
+            border: 3px solid #ccc;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
         }
-        .forecast-day img { width: 45px; height: 45px; margin: 5px 0; }
-        .forecast-temp { color: #ffaa00; font-weight: bold; }
-
-        /* 左右滑動巴士卡片容器 */
-        .bus-carousel {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            gap: 15px;
-            width: 100%;
-            padding-bottom: 10px;
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+        button {
+            font-size: 24px;
+            padding: 12px 24px;
+            background-color: #2b8a3e;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
         }
-        .bus-carousel::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
+        button:active {
+            background-color: #237032;
         }
-
-        /* 巴士卡片樣式調整 */
-        .bus-card {
-            background: #111;
-            border: 2px solid #333;
-            border-radius: 20px;
-            padding: 25px 20px;
-            min-width: 100%; 
-            box-sizing: border-box;
-            scroll-snap-align: start; 
+        .loading {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #666;
+            display: none;
         }
-        .bus-route { font-size: 3rem; font-weight: bold; color: #ffcc00; }
-        .bus-location { font-size: 1.1rem; color: #888; margin-top: 5px; }
-        
-        /* 3班車時間佈局 */
-        .bus-eta-container {
-            margin-top: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        .direction-section {
+            background: white;
+            border: 4px solid #2b8a3e;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            overflow: hidden;
         }
-        .eta-row {
+        .direction-title {
+            background-color: #2b8a3e;
+            color: white;
+            padding: 15px;
+            font-size: 26px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .stop-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .stop-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 5px 20px;
-            font-size: 1.6rem;
-            border-bottom: 1px dashed #222;
+            padding: 18px 15px;
+            border-bottom: 2px solid #eee;
         }
-        .eta-row:last-child { border-bottom: none; }
-        .eta-main { font-size: 2.4rem; color: #fff; font-weight: bold; }
-        .eta-next { color: #aaa; }
-
-        /* 小圓點指示器 */
-        .carousel-dots {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 10px;
+        .stop-item:last-child {
+            border-bottom: none;
         }
-        .dot {
-            width: 8px;
-            height: 8px;
-            background: #444;
-            border-radius: 50%;
-            transition: background 0.3s;
+        .stop-name {
+            font-size: 24px;
+            font-weight: bold;
+            max-width: 65%;
         }
-        .dot.active {
-            background: #00ffcc;
+        .eta-container {
+            text-align: right;
+        }
+        .eta-box {
+            font-size: 26px;
+            font-weight: bold;
+            color: #d9383a;
+            display: block;
+        }
+        .eta-next {
+            font-size: 18px;
+            color: #666;
+            display: block;
+            margin-top: 4px;
+        }
+        .no-bus {
+            font-size: 22px;
+            color: #999;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="time-box" id="live-clock">00:00:00</div>
+    <h1>🚌 長者簡易巴士到站時間</h1>
 
-    <div class="weather-current">
-        <span id="temp">--</span>°C | <span id="humidity">--</span>%
-        <span class="location-tag">葵青區 (荔景數據)</span>
+    <!-- 輸入車號欄位 -->
+    <div class="search-box">
+        <input type="text" id="routeInput" placeholder="請輸入巴士號碼 (例如 30)" inputmode="search">
+        <button onclick="searchBus()">查詢</button>
     </div>
 
-    <div class="forecast-container">
-        <div class="forecast-day">
-            <span id="f-date-1">--/--</span>
-            <img id="f-icon-1" src="" style="display:none;" referrerpolicy="no-referrer">
-            <span id="f-temp-1" class="forecast-temp">--°C</span>
-        </div>
-        <div class="forecast-day" style="border-left: 1px solid #222; border-right: 1px solid #222;">
-            <span id="f-date-2">--/--</span>
-            <img id="f-icon-2" src="" style="display:none;" referrerpolicy="no-referrer">
-            <span id="f-temp-2" class="forecast-temp">--°C</span>
-        </div>
-        <div class="forecast-day">
-            <span id="f-date-3">--/--</span>
-            <img id="f-icon-3" src="" style="display:none;" referrerpolicy="no-referrer">
-            <span id="f-temp-3" class="forecast-temp">--°C</span>
-        </div>
-    </div>
+    <div id="loadingStatus" class="loading">正在查詢，請稍候...</div>
 
-    <div class="bus-carousel" id="bus-carousel"></div>
-    <div class="carousel-dots" id="carousel-dots"></div>
-</div>
+    <!-- 結果顯示區域 -->
+    <div id="resultArea"></div>
 
-<script>
-    // 【設定】唔再需要寫死 dir，改用 dest 關鍵字去自動配對目的地
-    const busRoutes = [
-        { stopId: "6E6EBC9D1AF2DA52", route: "46X", dest: "顯徑", location: "荔景邨日景樓 (往大圍/顯徑)" },
-        { stopId: "1B89F83BD1FC3F74", route: "46X", dest: "美孚", location: "海福花園 (往美孚)" },
-        { stopId: "941B58A78A49CD0B", route: "57M", dest: "山景", location: "荔景北巴士總站(往山景)" }
-    ];
+    <script>
+        // 全局暫存，用來儲存巴士站 ID 對應的中文名稱
+        let stopNameMap = {};
 
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('live-clock').innerText = now.toTimeString().split(' ')[0];
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    async function fetchCurrentWeather() {
-        try {
-            const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
-            const data = await res.json();
-            const kcTemp = data.temperature.data.find(item => item.place === '葵涌');
-            document.getElementById('temp').innerText = kcTemp ? kcTemp.value : data.temperature.data[0].value;
-            document.getElementById('humidity').innerText = data.humidity.data[0].value;
-        } catch (e) { console.error("即時天氣更新失敗", e); }
-    }
-
-    async function fetchForecast() {
-        try {
-            const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc');
-            const data = await res.json();
-            
-            for(let i = 1; i <= 3; i++) {
-                const dayData = data.weatherForecast[i-1];
-                const dateStr = dayData.forecastDate;
-                const month = dateStr.substring(4,6);
-                const day = dateStr.substring(6,8);
-                document.getElementById(`f-date-${i}`).innerText = `${month}/${day}`;
-                
-                const iconId = dayData.ForecastIcon;
-                const iconUrl = `https://www.hko.gov.hk/images/HKOWxIconOutline/pic${iconId}.png`;
-                const imgTag = document.getElementById(`f-icon-${i}`);
-                imgTag.referrerPolicy = "no-referrer";
-                imgTag.src = iconUrl;
-                imgTag.style.display = 'block';
-                
-                document.getElementById(`f-temp-${i}`).innerText = `${dayData.forecastMintemp.value}-${dayData.forecastMaxtemp.value}°C`;
+        // 主程式：查詢巴士
+        async function searchBus() {
+            const route = document.getElementById('routeInput').value.trim().toUpperCase();
+            if (!route) {
+                alert('請先輸入巴士號碼！');
+                return;
             }
-        } catch (e) { console.error("天氣預報更新失敗", e); }
-    }
 
-    // 初始化動態卡片 UI 結構
-    function initBusCards() {
-        const carousel = document.getElementById('bus-carousel');
-        const dotsContainer = document.getElementById('carousel-dots');
-        carousel.innerHTML = "";
-        dotsContainer.innerHTML = "";
-
-        busRoutes.forEach((bus, index) => {
-            const card = document.createElement('div');
-            card.className = "bus-card";
-            card.innerHTML = `
-                <div class="bus-route">九巴 ${bus.route}</div>
-                <div class="bus-location">${bus.location}</div>
-                <div class="bus-eta-container" id="eta-list-${index}">
-                    <div style="font-size: 1.5rem; color: #888;">載入中...</div>
-                </div>
-            `;
-            carousel.appendChild(card);
-
-            const dot = document.createElement('div');
-            dot.className = `dot ${index === 0 ? 'active' : ''}`;
-            dotsContainer.appendChild(dot);
-        });
-
-        carousel.addEventListener('scroll', () => {
-            const scrollLeft = carousel.scrollLeft;
-            const cardWidth = carousel.clientWidth;
-            const activeIndex = Math.round(scrollLeft / cardWidth);
+            const loading = document.getElementById('loadingStatus');
+            const resultArea = document.getElementById('resultArea');
             
-            const dots = document.querySelectorAll('.dot');
-            dots.forEach((dot, idx) => {
-                if (idx === activeIndex) dot.classList.add('active');
-                else dot.classList.remove('active');
-            });
-        });
-    }
+            loading.style.display = 'block';
+            resultArea.innerHTML = '';
 
-    // 獲取所有路線的 ETA
-// 獲取所有路線的 ETA (已修正死循環 Bug)
-    async function fetchAllBusETA() {
-        for (let i = 0; i < busRoutes.length; i++) {
-            const bus = busRoutes[i];
-            const listContainer = document.getElementById(`eta-list-${i}`);
-            
             try {
-                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${bus.stopId}/${bus.route}/1`);
-                const data = await res.json();
-                
-                // 檢查目的地字串（dest_tc）是否包含我們設定的關鍵字
-                const validBuses = data.data.filter(item => item.eta && item.dest_tc.includes(bus.dest));
+                // 1. 同時獲取去程與回程的車站線路靜態資料 (Service Type 預設為 1)
+                const [outboundRes, inboundRes] = await Promise.all([
+                    fetch(`https://etabus.gov.hk{route}/outbound/1`).then(res => res.json()),
+                    fetch(`https://etabus.gov.hk{route}/inbound/1`).then(res => res.json())
+                ]);
 
-                if (validBuses.length > 0) {
-                    // 排序
-                    validBuses.sort((a, b) => new Date(a.eta) - new Date(b.eta));
-                    
-                    // 【全新安全修正】使用 Set 一行去重複，100% 避免 400ms 死循環錯誤
-                    const seen = new Set();
-                    const uniqueBuses = validBuses.filter(b => seen.has(b.eta) ? false : seen.add(b.eta));
-
-                    const maxBuses = Math.min(3, uniqueBuses.length);
-                    let htmlContent = "";
-                    
-                    const currentTimestamp = new Date(data.generated_timestamp);
-
-                    for (let j = 0; j < maxBuses; j++) {
-                        const etaTime = new Date(uniqueBuses[j].eta);
-                        const now = new Date();
-                        
-                        //let diffMins = Math.floor((etaTime - now) / 1000 / 60);
-                        let diffMins = Math.floor((etaTime - now) / 1000 / 60);
-                        diffMins = Math.max(0, diffMins); 
-
-                        const hours = String(etaTime.getHours()).padStart(2, '0');
-                        const minutes = String(etaTime.getMinutes()).padStart(2, '0');
-                        const timeString = `${hours}:${minutes}`;
-
-                        let label = `第 ${j+1} 班`;
-                        if (j === 0) label = "下班車";
-                        
-                        if (j === 0) {
-                            htmlContent += `
-                                <div class="eta-row">
-                                    <span style="color: #00ffcc; font-weight: bold;">${label}</span>
-                                    <span class="eta-main">
-                                        ${diffMins} 分鐘 <span style="font-size: 1.4rem; color: #ffcc00; font-weight: normal;">(${timeString})</span>
-                                    </span>
-                                </div>`;
-                        } else {
-                            htmlContent += `
-                                <div class="eta-row eta-next">
-                                    <span style="font-size: 1.3rem;">${label}</span>
-                                    <span style="font-size: 1.5rem; font-weight: bold;">
-                                        ${diffMins} 分鐘 <span style="font-size: 1.1rem; color: #888; font-weight: normal;">(${timeString})</span>
-                                    </span>
-                                </div>`;
-                        }
-                    }
-                    listContainer.innerHTML = htmlContent;
-                } else {
-                    listContainer.innerHTML = `<div style="font-size: 1.8rem; padding: 20px;">暫無班次</div>`;
+                if ((!outboundRes.data || outboundRes.data.length === 0) && (!inboundRes.data || inboundRes.data.length === 0)) {
+                    loading.style.display = 'none';
+                    resultArea.innerHTML = `<div style="text-align:center; font-size:24px; color:red; font-weight:bold;">找不到這條巴士線 (${route})，請檢查輸入是否正確。</div>`;
+                    return;
                 }
-            } catch (e) { 
-                console.error(e);
-                listContainer.innerHTML = `<div style="color: red;">更新失敗</div>`;
+
+                // 2. 獲取整條線所有車站的實時 ETA 數據
+                const etaRes = await fetch(`https://etabus.gov.hk{route}/1`).then(res => res.json());
+                const etaData = etaRes.data || [];
+
+                // 3. 處理並分開去程 (O) 與回程 (I) 的車站與時間
+                let htmlContent = '';
+                
+                if (outboundRes.data && outboundRes.data.length > 0) {
+                    htmlContent += await buildDirectionDOM(route, "去程", outboundRes.data, etaData.filter(e => e.dir === 'O'));
+                }
+                if (inboundRes.data && inboundRes.data.length > 0) {
+                    htmlContent += await buildDirectionDOM(route, "回程", inboundRes.data, etaData.filter(e => e.dir === 'I'));
+                }
+
+                resultArea.innerHTML = htmlContent;
+
+            } catch (error) {
+                console.error(error);
+                resultArea.innerHTML = `<div style="text-align:center; font-size:22px; color:red;">網絡錯誤或 API 故障，請重試。</div>`;
+            } finally {
+                loading.style.display = 'none';
             }
         }
-    }
-    // 初始執行
-    fetchCurrentWeather();
-    fetchForecast();
-    initBusCards();  
-    fetchAllBusETA(); 
 
-    // 30秒更新
-    setInterval(() => {
-        fetchCurrentWeather();
-        fetchAllBusETA();
-    }, 30000);
+        // 獲取單個巴士站的名稱（帶有本地暫存機制，避免重複查同一個站）
+        async function getStopName(stopId) {
+            if (stopNameMap[stopId]) {
+                return stopNameMap[stopId];
+            }
+            try {
+                const res = await fetch(`https://etabus.gov.hk{stopId}`).then(res => res.json());
+                if (res.data && res.data.name_tc) {
+                    stopNameMap[stopId] = res.data.name_tc;
+                    return res.data.name_tc;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            return "未知巴士站";
+        }
 
-    // 3小時更新預報
-    setInterval(fetchForecast, 10800000);
-</script>
+        // 計算實時剩餘時間（分鐘）
+        function calculateRemainingMinutes(etaString) {
+            if (!etaString) return null;
+            const now = new Date();
+            const etaTime = new Date(etaString);
+            const diffMs = etaTime - now;
+            const diffMins = Math.ceil(diffMs / 1000 / 60);
+            return diffMins <= 0 ? "即將到站" : `${diffMins} 分鐘`;
+        }
 
+        // 建立單一方向的 HTML 介面
+        async function buildDirectionDOM(routeNum, dirLabel, routeStops, etaList) {
+            // 找出該方向的目的地名稱
+            let destName = dirLabel === "去程" ? "指定目的地" : "起點站";
+            if (etaList.length > 0 && etaList[0].dest_tc) {
+                destName = etaList[0].dest_tc;
+            }
+
+            let html = `
+                <div class="direction-section">
+                    <div class="direction-title">${routeNum} 號線 ➡️ 往 ${destName} (${dirLabel})</div>
+                    <ul class="stop-list">
+            `;
+
+            // 依序抓出路線中的所有巴士站
+            for (const item of routeStops) {
+                const stopId = item.stop;
+                const stopName = await getStopName(stopId);
+
+                // 篩選出這個巴士站的 ETA 紀錄（按時間排序）
+                const stopEtas = etaList
+                    .filter(e => e.stop === stopId && e.eta)
+                    .sort((a, b) => new Date(a.eta) - new Date(b.eta));
+
+                let etaDisplay = `<span class="no-bus">暫無班次</span>`;
+                let nextBusDisplay = '';
+
+                if (stopEtas.length > 0) {
+                    const firstBusMins = calculateRemainingMinutes(stopEtas[0].eta);
+                    if (firstBusMins) {
+                        etaDisplay = `<span class="eta-box">${firstBusMins}</span>`;
+                    }
+                    // 如果有下一班車，順便列出
+                    if (stopEtas.length > 1) {
+                        const secondBusMins = calculateRemainingMinutes(stopEtas[1].eta);
+                        if (secondBusMins) {
+                            nextBusDisplay = `<span class="eta-next">下班: ${secondBusMins}</span>`;
+                        }
+                    }
+                }
+
+                html += `
+                    <li class="stop-item">
+                        <div class="stop-name">${item.seq}. ${stopName}</div>
+                        <div class="eta-container">
+                            ${etaDisplay}
+                            ${nextBusDisplay}
+                        </div>
+                    </li>
+                `;
+            }
+
+            html += `</ul></div>`;
+            return html;
+        }
+    </script>
 </body>
 </html>
